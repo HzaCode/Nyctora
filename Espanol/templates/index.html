@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Random Quote Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        #quote-container {
+            margin: 50px auto;
+            padding: 30px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            width: 60%;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #quote {
+            font-size: 1.2em;
+            line-height: 1.5em;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 50px;
+        }
+        .language {
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to the Random Quote Generator!</h1>
+
+    <div id="quote-container">
+        <h2>Random Quote:</h2>
+        <p id="quote">Loading...</p>
+    </div>
+
+    <script>
+        // Fetch the quote when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/api/quote')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('quote').innerHTML = `
+                        <div class="language">English:</div>
+                        <p>${data.quote}</p>
+                        <div class="language">Spanish:</div>
+                        <p>${data.translated_quote}</p>
+                    `;
+                })
+                .catch(error => {
+                    document.getElementById('quote').innerText = "Failed to load quote. Please try again later.";
+                });
+        });
+    </script>
+</body>
+</html>
