@@ -2,60 +2,195 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Random Quote Generator</title>
+    <title>Spanish Pronunciation Helper</title>
+    <!-- Include Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Include Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha384-ojHn2Y3gFG5S1LjXk4bhDgC+c1K1VgU5s4hvlqxZ+x7JG/sq8jdtJ+1J3wKxVJ05" crossorigin="anonymous">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
         }
-        #quote-container {
-            margin: 50px auto;
-            padding: 30px;
-            border: 1px solid #ccc;
-            background-color: #fff;
-            width: 60%;
-            text-align: center;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        #quote {
-            font-size: 1.2em;
-            line-height: 1.5em;
+        #container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         h1 {
             text-align: center;
-            margin-top: 50px;
+            color: #333333;
+            margin-bottom: 30px;
+        }
+        p.description {
+            text-align: center;
+            color: #666666;
+            font-size: 18px;
+            margin-bottom: 40px;
+        }
+        button {
+            display: block;
+            margin: 0 auto 40px auto;
+            padding: 12px 24px;
+            font-size: 18px;
+            color: #ffffff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #output {
+            font-size: 20px;
+            line-height: 1.6;
+            color: #333333;
+            overflow-y: auto;
+            max-height: 400px;
+            padding-right: 10px;
         }
         .language {
             font-weight: bold;
             margin-top: 20px;
+            color: #333333;
+        }
+        .word {
+            cursor: pointer;
+            color: #007bff;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .word:hover {
+            text-decoration: underline;
+            color: #0056b3;
+        }
+        .syllable {
+            color: #e55353;
+        }
+        ruby rt {
+            font-size: 0.8em;
+            color: #555555;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 0 10px;
+            }
+            #container {
+                padding: 20px 10px;
+            }
+            button {
+                font-size: 16px;
+            }
+            #output {
+                font-size: 18px;
+            }
         }
     </style>
+    <!-- Favicon -->
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body>
-    <h1>Welcome to the Random Quote Generator!</h1>
-
-    <div id="quote-container">
-        <h2>Random Quote:</h2>
-        <p id="quote">Loading...</p>
+    <div id="container">
+        <h1>Spanish Pronunciation Helper</h1>
+        <p class="description">Click the button to get a random English quote, automatically translated and pronounced in Spanish.</p>
+        <button id="fetchQuote" aria-label="Get Spanish Pronunciation"><i class="fas fa-language"></i> Get Spanish Pronunciation</button>
+        <div id="output"></div>
     </div>
 
     <script>
-        // Fetch the quote when the page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            fetch('/api/quote')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('quote').innerHTML = `
-                        <div class="language">English:</div>
-                        <p>${data.quote}</p>
-                        <div class="language">Spanish:</div>
-                        <p>${data.translated_quote}</p>
+        document.getElementById('fetchQuote').addEventListener('click', function() {
+            document.getElementById('output').innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
+            fetch('/api/translate')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('output').innerHTML = `<p class="error">${data.error}</p>`;
+                } else {
+                    document.getElementById('output').innerHTML = `
+                        <div class="language">English Quote:</div>
+                        <p>${data.english_text}</p>
+                        <div class="language">Spanish Pronunciation:</div>
+                        <p id="syllableText">${formatSyllables(data.syllables)}</p>
                     `;
-                })
-                .catch(error => {
-                    document.getElementById('quote').innerText = "Failed to load quote. Please try again later.";
-                });
+                    addPronunciationEvents();
+                    pronounceText(data.translated_text);
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                document.getElementById('output').innerHTML = '<p class="error">Error processing text. Please try again.</p>';
+            });
         });
+
+        function formatSyllables(text) {
+            const words = text.split(' ');
+            return words.map(word => {
+                if (word.includes('-')) {
+                    const syllables = word.split('-');
+                    return `<span class="word" data-word="${word.replace(/-/g, '')}">
+                        <ruby>
+                            ${word.replace(/-/g, '')}
+                            <rt>${syllables.map((syl, idx) => {
+                                return `<span class="${idx + 1 === getTonicSyllable(syllables.length) ? 'syllable' : ''}">${syl}</span>`;
+                            }).join('-')}</rt>
+                        </ruby>
+                    </span>`;
+                } else {
+                    return `<span class="word" data-word="${word}">${word}</span>`;
+                }
+            }).join(' ');
+        }
+
+        function getTonicSyllable(totalSyllables) {
+            return totalSyllables > 1 ? totalSyllables - 1 : totalSyllables;
+        }
+
+        function addPronunciationEvents() {
+            const words = document.querySelectorAll('.word');
+            words.forEach(wordElement => {
+                wordElement.addEventListener('click', () => {
+                    const word = wordElement.getAttribute('data-word');
+                    pronounceWord(word);
+                });
+            });
+        }
+
+        function pronounceWord(word) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(word);
+                utterance.lang = 'es-ES';
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert('Speech synthesis is not supported in this browser.');
+            }
+        }
+
+        function pronounceText(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'es-ES';
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.warn('Speech synthesis is not supported in this browser.');
+            }
+        }
     </script>
+
+    <p style="text-align: center; color: #888888; margin-top: 40px;">
+        Inspired by <a href="https://spanish.imiku.me/" target="_blank">Ice-Hazymoon</a>.
+    </p>
 </body>
 </html>
