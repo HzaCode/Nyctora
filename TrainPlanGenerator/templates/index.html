@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Advanced Training Plan Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.3.4/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <style>
+        :root {
+            --primary-color: #3273dc;
+            --secondary-color: #00d1b2;
+            --background-color: #f5f5f5;
+            --card-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background: var(--background-color);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .training-container {
+            text-align: center;
+            margin-top: 2rem;
+            padding: 2rem;
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .title {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            font-weight: 700;
+        }
+
+        .training-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            padding: 1rem;
+        }
+
+        .option {
+            position: relative;
+            height: 250px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #ffffff, #f8f9fa);
+            box-shadow: var(--card-shadow);
+            cursor: pointer;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .option:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: 1;
+        }
+
+        .option:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(50, 115, 220, 0.3);
+        }
+
+        .option:hover:before {
+            opacity: 0.1;
+        }
+
+        .option-content {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .option img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid var(--primary-color);
+            padding: 10px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .option:hover img {
+            transform: scale(1.1) rotate(5deg);
+            border-color: var(--secondary-color);
+        }
+
+        .option p {
+            margin-top: 1rem;
+            font-size: 1.4em;
+            font-weight: 600;
+            color: var(--primary-color);
+            transition: color 0.3s ease;
+        }
+
+        .exercise-box {
+            background: white;
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+            padding: 2rem;
+            margin: 2rem 0;
+            transform: translateY(20px);
+            opacity: 0;
+            animation: slideUp 0.6s ease forwards;
+        }
+
+        @keyframes slideUp {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .exercise-box h2 {
+            color: var(--primary-color);
+            font-size: 1.8em;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid var(--secondary-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .progress-container {
+            margin-top: 1.5rem;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-radius: 10px;
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar:after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                rgba(255,255,255,0.1),
+                rgba(255,255,255,0.2),
+                rgba(255,255,255,0.1));
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .exercise-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        .exercise-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .image-wrapper {
+            aspect-ratio: 16/9;
+            overflow: hidden;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .exercise-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .exercise-image:hover {
+            transform: scale(1.05);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid var(--primary-color);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <section class="section">
+        <div class="container training-container animate__animated animate__fadeIn">
+            <h1 class="title">What do you want to train today?</h1>
+            <div class="training-options">
+                <div class="option" onclick="generateTrainingPlan('chest')" role="button" tabindex="0">
+                    <div class="option-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2964/2964514.png" alt="Chest Training">
+                        <p>Chest</p>
+                    </div>
+                </div>
+                <div class="option" onclick="generateTrainingPlan('back')" role="button" tabindex="0">
+                    <div class="option-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2964/2964514.png" alt="Back Training">
+                        <p>Back</p>
+                    </div>
+                </div>
+                <div class="option" onclick="generateTrainingPlan('shoulders')" role="button" tabindex="0">
+                    <div class="option-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2964/2964514.png" alt="Shoulders Training">
+                        <p>Shoulders</p>
+                    </div>
+                </div>
+                <div class="option" onclick="generateTrainingPlan('legs')" role="button" tabindex="0">
+                    <div class="option-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2964/2964514.png" alt="Legs Training">
+                        <p>Legs</p>
+                    </div>
+                </div>
+            </div>
+            <div id="training-plan" class="content mt-5"></div>
+        </div>
+    </section>
+
+    <script>
+        function generateTrainingPlan(bodyPart) {
+            const trainingPlanDiv = document.getElementById("training-plan");
+            trainingPlanDiv.innerHTML = '<div class="loading-spinner"></div>';
+
+            axios.get(`/get_training_plan?body_part=${bodyPart}`)
+                .then(response => {
+                    const plan = response.data;
+                    trainingPlanDiv.innerHTML = "";
+
+                    const header = document.createElement('h2');
+                    header.className = 'title is-2 animate__animated animate__fadeIn';
+                    header.textContent = `${bodyPart.charAt(0).toUpperCase() + bodyPart.slice(1)} Training Plan`;
+                    trainingPlanDiv.appendChild(header);
+
+                    plan.forEach((exercise, index) => {
+                        setTimeout(() => {
+                            const exerciseDiv = document.createElement("div");
+                            exerciseDiv.className = "exercise-box animate__animated animate__fadeInUp";
+                            exerciseDiv.style.animationDelay = `${index * 0.2}s`;
+
+                            const title = document.createElement("h2");
+                            title.textContent = exercise.name;
+                            exerciseDiv.appendChild(title);
+
+                            const details = document.createElement("div");
+                            details.className = "exercise-details";
+
+                            const description = document.createElement("div");
+                            description.className = "exercise-description";
+                            description.innerHTML = exercise.description;
+                            details.appendChild(description);
+
+                            if (exercise.images && exercise.images.length > 0) {
+                                const imageContainer = document.createElement("div");
+                                imageContainer.className = "exercise-images";
+                                exercise.images.forEach(imageUrl => {
+                                    const imgWrapper = document.createElement("div");
+                                    imgWrapper.className = "image-wrapper";
+                                    const img = document.createElement("img");
+                                    img.src = imageUrl;
+                                    img.alt = exercise.name;
+                                    img.className = "exercise-image";
+                                    imgWrapper.appendChild(img);
+                                    imageContainer.appendChild(imgWrapper);
+                                });
+                                details.appendChild(imageContainer);
+                            }
+
+                            exerciseDiv.appendChild(details);
+
+                            const progressContainer = document.createElement('div');
+                            progressContainer.className = 'progress-container';
+                            const progress = document.createElement('div');
+                            progress.className = 'progress-bar';
+                            progress.style.width = '0%';
+                            progressContainer.appendChild(progress);
+                            exerciseDiv.appendChild(progressContainer);
+
+                            trainingPlanDiv.appendChild(exerciseDiv);
+
+                            setTimeout(() => {
+                                progress.style.width = `${Math.floor(Math.random() * 100)}%`;
+                            }, 100);
+                        }, index * 200);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    trainingPlanDiv.innerHTML = `
+                        <div class="notification is-danger animate__animated animate__fadeIn">
+                            <button class="delete"></button>
+                            Error fetching training plan. Please try again later.
+                        </div>
+                    `;
+                });
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                const focused = document.activeElement;
+                if (focused.classList.contains('option')) {
+                    focused.click();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
