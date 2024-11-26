@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title> Footprint </title>
+<style type="text/css">
+    html, body { height: 100%; margin: 0; padding: 0; }
+    #container { height: 100%; }
+    .info-window-content { font-family: Arial, sans-serif; font-size: 14px; line-height: 1.5; }
+    .info-window-content b { color: #ff5722; }
+    .route-line { border-top: 1px solid #ddd; margin-top: 10px; padding-top: 10px; }
+</style>
+<!-- Baidu Map API -->
+<script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=BAIDU_API_KEY"></script>
+</head>
+<body>
+<div id="container"></div>
+
+<script type="text/javascript">
+// Init map
+var map = new BMap.Map("container");
+map.centerAndZoom(new BMap.Point(0, 20), 2); // Center to Africa, zoom level 2
+map.addControl(new BMap.NavigationControl({ type: BMAP_NAVIGATION_CONTROL_LARGE })); // Nav control
+map.addControl(new BMap.ScaleControl()); // Scale control
+map.addControl(new BMap.OverviewMapControl()); // Overview control
+map.addControl(new BMap.MapTypeControl()); // Map type switch
+map.enableScrollWheelZoom(true); // Enable zoom
+
+// Custom map style
+var myStyleJson = [
+    { "featureType": "water", "elementType": "all", "stylers": { "color": "#d1e5ff" }},
+    { "featureType": "land", "elementType": "all", "stylers": { "color": "#f3f1e6" }},
+    { "featureType": "highway", "elementType": "geometry", "stylers": { "color": "#fddc9b" }},
+    { "featureType": "railway", "elementType": "geometry", "stylers": { "color": "#ffedc6" }},
+    { "featureType": "green", "elementType": "all", "stylers": { "color": "#c6e48b" }}
+];
+map.setMapStyle({ styleJson: myStyleJson });
+
+// test Cities 
+var locations = [
+    { country: "USA", cities: ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix"], coords: [[40.7128, -74.0060], [34.0522, -118.2437], [41.8781, -87.6298], [29.7604, -95.3698], [33.4484, -112.0740]] },
+    { country: "UK", cities: ["London", "Manchester", "Birmingham", "Liverpool", "Edinburgh"], coords: [[51.5074, -0.1278], [53.4808, -2.2426], [52.4862, -1.8904], [53.4084, -2.9916], [55.9533, -3.1883]] },
+    { country: "Japan", cities: ["Tokyo", "Osaka", "Kyoto", "Sapporo", "Fukuoka"], coords: [[35.6895, 139.6917], [34.6937, 135.5022], [35.0116, 135.7681], [43.0621, 141.3544], [33.5902, 130.4017]] },
+    // More countries and cities...
+];
+
+// Get random countries
+function getRandomCountries(num) {
+    return locations.sort(() => 0.5 - Math.random()).slice(0, num);
+}
+
+// Get random city from a country
+function getRandomCities(country) {
+    var index = Math.floor(Math.random() * country.cities.length);
+    return { city: country.cities[index], coord: country.coords[index] };
+}
+
+var randomCountries = getRandomCountries(8);
+var previousPoint = null;
+
+// Add markers
+randomCountries.forEach(function(country) {
+    var cityInfo = getRandomCities(country);
+    var point = new BMap.Point(cityInfo.coord[1], cityInfo.coord[0]);
+    var marker = new BMap.Marker(point, { icon: new BMap.Icon("https://maps.gstatic.com/mapfiles/ms2/micons/red-dot.png", new BMap.Size(32, 32)) });
+    map.addOverlay(marker);
+
+    // Add bounce animation to marker
+    marker.setAnimation(BMAP_ANIMATION_BOUNCE);
+
+    var infoWindowContent = `
+        <div class='info-window-content'>
+            <b>${country.country}</b><br />
+            City: ${cityInfo.city}<br />
+            <img src="https://via.placeholder.com/100" alt="${cityInfo.city}" /><br />
+            <a href="https://en.wikipedia.org/wiki/${cityInfo.city}" target="_blank">Learn more</a>
+        </div>`;
+
+    var infoWindow = new BMap.InfoWindow(infoWindowContent, {
+        width: 250,
+        height: 150,
+        enableMessage: true
+    });
+
+    marker.addEventListener("click", function() {
+        this.openInfoWindow(infoWindow);
+    });
+
+    // Draw lines between markers
+    if (previousPoint) {
+        var polyline = new BMap.Polyline([previousPoint, point], {
+            strokeColor: "#ff0000",
+            strokeWeight: 3,
+            strokeOpacity: 0.7
+        });
+        map.addOverlay(polyline);
+    }
+    previousPoint = point;
+});
+
+// Fit map to markers
+var points = randomCountries.map(country => {
+    var cityInfo = getRandomCities(country);
+    return new BMap.Point(cityInfo.coord[1], cityInfo.coord[0]);
+});
+var view = map.getViewport(points);
+map.centerAndZoom(view.center, view.zoom);
+
+</script>
+</body>
+</html>
