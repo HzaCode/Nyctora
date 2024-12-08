@@ -1,0 +1,22 @@
+﻿{
+  "manifest_version": 3,
+  "name": "Nyctora ChatterBot",
+  "version": "1.0",
+  "description": "A ChatBot Chrome Extension",
+  "permissions": ["activeTab"],
+  "action": {
+    "default_popup": "templates/popup.html",
+    "default_icon": {
+      "16": "static/icon16.png",
+      "48": "static/icon48.png",
+      "128": "static/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["static/content.js"],
+      "css": ["static/styles.css"]
+    }
+  ]
+}
