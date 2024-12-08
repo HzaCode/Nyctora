@@ -1,0 +1,4 @@
+Flask==2.3.3
+requests==2.31.0
+pyphen==0.10.1
+werkzeug==2.3.5
