@@ -7,6 +7,7 @@
 // @match        https://search.douban.com/book/subject_search*
 // @grant        none
 // @run-at       document-end
+// @license      GPL-3.0
 // ==/UserScript==
 
 (function() {
